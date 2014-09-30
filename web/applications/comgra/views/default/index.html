@@ -1,0 +1,17 @@
+{{left_sidebar_enabled,right_sidebar_enabled=False,('message' in globals())}}
+{{extend 'layout.html'}}
+
+<h4>{{=T('Computer Science Collaboration Graph')}}</h4>
+
+<p>
+    O Grafo vai aqui
+</p>
+
+{{block right_sidebar}}
+{{=T('Links úteis')}}
+<ul>
+  <li>{{=A(T("Online examples"), _href=URL('examples','default','index'))}}</li>
+  <li><a href="http://www.cic.unb.br">Ciencias da Computação</a></li>
+  <li><a href="http://web2py.com">web2py.com</a></li>
+</ul>
+{{end}}
