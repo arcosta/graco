@@ -1,14 +1,14 @@
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
 from http.client import BadStatusLine
-import json
+import json,re
 
 protocolHost = "http://buscatextual.cnpq.br"
 url_visualiza = protocolHost + "/buscatextual/visualizacv.do?id="
 
 def carregaJCR(issn, resArt):
     '''
-    Carrega as informações de JCR do artigo
+    @description Carrega as informações de JCR do artigo
     '''
     baseurl = "http://buscatextual.cnpq.br/buscatextual/visualizacao.do"
     query="metodo=ajax&acao=jcr&issn=" + issn
@@ -23,10 +23,10 @@ def carregaJCR(issn, resArt):
             resArt.update(json_obj)
     except ValueError as err:
         # Esse é o caso dos artigos que não possuem JCR
-        print("Erro ao pegar jcr: " + err.__str__())
+        print("Erro ao pegar jcr: ", err)
     except BadStatusLine as err:
         # Esse tratamento pega timeouts na urlopen	
-        print("Erro de requisição no JCR: " + err.__str__())
+        print("Erro de requisição no JCR: ", err)
     
 def artigosPelaURL(soup):
     '''
@@ -37,10 +37,19 @@ def artigosPelaURL(soup):
     '''
     artigos = soup.find_all(attrs={"class": "citacoes"})
     resArtigos = list()
+    citationPrefix= re.compile("(.*(\.)?[\d]{4}(\n)?)",re.IGNORECASE | re.MULTILINE)
+
     for artigo in artigos:
         fields = artigo['cvuri'].split("&")
         resArt = dict()
-        resArt["citacao"] = artigo.findParents()[0].text
+        #resArt["citacao"] = artigo.findParents()[0].text
+        #resArt["citacao"] = resArt["citacao"].replace("'", '?')
+        citationAsList = artigo.findParents()[0].text.replace("'", '?').split(" . ")
+        prefixToRemove = citationPrefix.match(citationAsList[0])
+        yearPublication = citationAsList[1].split(',')[-1].lstrip()
+        citationAsString = citationPrefix.split(citationAsList[0])[4].lstrip()
+        resArt["citacao"] = citationAsString
+        resArt["ano"] = yearPublication
         for i in fields:
             if i.find("issn") != -1:
                 issn_data=i.split('=')[1]
@@ -49,12 +58,16 @@ def artigosPelaURL(soup):
                 carregaJCR(issn_data, resArt)
             if i.find("titulo") != -1:
                 titulo = i.split('=')[1]
-                resArt["titulo"]=titulo.replace("'", '"')
-                print("titulo: " + titulo)
+                resArt["titulo"]=titulo.replace("'", '´')
+                print("titulo: " + resArt["titulo"])
             if i.find("nomePeriodico") != -1:
                 nomePeriodico=i.split('=')[1]
                 resArt["nomePeriodico"]=nomePeriodico
                 #print("Nome do periódico: " + nomePeriodico)
+            if i.find("doi") != -1:
+                doi=i.split('=')[1]
+                resArt["doi"]=doi
+            
         print("")
         resArtigos.append(resArt)
     return resArtigos
@@ -62,7 +75,7 @@ def artigosPelaURL(soup):
 	
 def artigosPeloContexto(soup):
     '''
-    localiza uma div da classe pad-5 e verifica se ela contem um span com
+    @description Localiza uma div da classe pad-5 e verifica se ela contem um span com
     '''
     tags_pad = soup.find_all(attrs={"class": "layout-cell-pad-5"})
     for tag in tags_pad:

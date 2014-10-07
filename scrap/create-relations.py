@@ -1,24 +1,41 @@
 from py2neo import neo4j,cypher,node
 from time import time
 
+#
+# Script to make authoring relationships for professors and articles 
+# previously loaded into Graph database.  
+#
+
 class Professor:
     def __init__(self, name, cit):
+        '''
+        Initialize a Professor object.
+        @param name Professor's name
+        @param cit A data structure Set with names used for citations
+        '''
         self.citation=cit
         self.name = name
         
 class Article:
     def __init__(self, subject, cit):
+        '''
+        Initialize an Article object.
+        @param subject The title of the publication
+        @param cit A data structure Set with names of authors 
+        '''
         self.citation=cit
         self.subject = subject
 
-
 start_time = time()
+
+#Connect to neo4j and run queries
 graph_db = neo4j.GraphDatabaseService()
 queryAuthors = "MATCH (a:Author) RETURN a"
 queryArticle = "MATCH (p:Article) RETURN p"
 professors,metadata = cypher.execute(graph_db, queryAuthors)
 articles,metadata = cypher.execute(graph_db, queryArticle)
 
+# Initialize lists
 professorList = list()
 articleList = list()
 

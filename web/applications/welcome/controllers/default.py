@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 # this file is released under public domain and you can use without limitations
 
+from py2neo import neo4j,cypher
+
 #########################################################################
 ## This is a sample controller
 ## - index is the default action of any application
@@ -18,8 +20,7 @@ def index():
     if you need a simple wiki simply replace the two lines below with:
     return auth.wiki()
     """
-    response.flash = T("Welcome to web2py!")
-    return dict(message=T('Hello World'))
+    return dict(message='ComGra')
 
 
 def user():
@@ -74,3 +75,35 @@ def data():
       LOAD('default','data.load',args='tables',ajax=True,user_signature=True)
     """
     return dict(form=crud())
+
+@request.restful()
+def api():
+    response.view = 'generic.json'
+    def GET(*args,**vars):
+        # Retorne uma lista de nos dessa forma dessa forma
+        # {source: "Nokia", target: "Qualcomm", type: "suit"}
+        patterns = [
+            "/relations[relations]",
+            "/researcher/{researchers.name.startswith}",
+            "/researcher/{researchers.id}/:field"            
+            ]
+        
+        try:
+            graph_db = neo4j.GraphDatabaseService()
+            queryRelations = "MATCH (a:Author)<-[r:AUTHORING]->(p:Article) RETURN a,p"
+            relations,metadata = cypher.execute(graph_db, queryRelations)
+            
+            links = list()
+            if relations.__len__() < 10:
+                raise Exception("Few nodes")
+            for r in relations:
+                links.append({"source":r[0]["name"], 
+                                        "target":r[1]["issn"], 
+                                        "size":6}
+                )
+        except Exception,e:
+             return dict(links="ERROR: " + e.__str__())
+        # Na view pode usar um forEach no json    
+        return dict(children=links)
+        
+    return locals()
