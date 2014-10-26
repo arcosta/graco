@@ -24,7 +24,7 @@ def searchCV(name):
 	'buscaNome':'true', 
 	'textoBusca':'"'+name+'"', 
 	'buscarDoutores': 'true', 
-	'buscarDemais': 'true', 
+	'buscarDemais': 'false', 
 	'buscarBrasileiros': 'true',
 	'buscarEstrangeiros':'true',
 	'paisNascimento':'0'})

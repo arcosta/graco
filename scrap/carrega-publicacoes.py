@@ -12,8 +12,10 @@ import parselattes2
 print("Iniciando carga da base a partir de web")
 
 #TODO: acho que tem como obter um session fo graph_db
+#graph_db = neo4j.GraphDatabaseService("http://grafocolaboracao:1CmvfXNcEzyT78FwUHVU@grafocolaboracao.sb02.stations.graphenedb.com:24789/db/data/")
 graph_db = neo4j.GraphDatabaseService()
-session = cypher.Session("http://localhost:7474")
+#session = cypher.Session("http://grafocolaboracao:1CmvfXNcEzyT78FwUHVU@grafocolaboracao.sb02.stations.graphenedb.com:24789/db/data/")
+session = cypher.Session()
 
 # Prepara a traducao de acentos para evitar problemas na busca
 charOrigem="áâãéêíóôõú"
@@ -41,6 +43,7 @@ def carrega_professor():
         tx.append("MERGE (a:Author {name:'%s'}) RETURN a" % nomeProfessor)
         tx.execute()
         tx.commit()
+
     print("Author list loaded")
 
 def carrega_artigos():
@@ -54,6 +57,7 @@ def carrega_artigos():
 
     for i in professors:
         profName = str(i[0]).strip()
+        
         print("Pesquisando professor: " + profName)
     
         searchRes = searchCV(profName)    
@@ -62,7 +66,8 @@ def carrega_artigos():
         if curriculums.__len__() > 1:
             print("Mais de um curriculo para o professor: " + profName)
         for curr in curriculums:
-            nomeCitacoes,artigos = parselattes2.listaCitacoes(curr)            
+            nomeCitacoes,artigos = parselattes2.listaCitacoes(curr)
+            
             print("Nomes usados nas citacoes %s" %nomeCitacoes)
             nomeCitacoes = nomeCitacoes.replace("'",'"')
             # Atualiza os nomes usados para citação
@@ -78,7 +83,7 @@ def carrega_artigos():
                 articleAsString = str()
                 for key in artigo.keys():
                     articleAsString += "p." + key.replace('-','_') + " = '" +artigo[key] + "', "
-                                   (artigo["titulo"], articleAsString))
+                                   #(artigo["titulo"], articleAsString))
                 try:
                     cypher.execute(graph_db,
                                    "MERGE (p:Article {titulo:'%s'}) ON CREATE SET %s p.lastUpdate = timestamp() RETURN p" %

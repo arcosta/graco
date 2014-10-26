@@ -29,6 +29,7 @@ class Article:
 start_time = time()
 
 #Connect to neo4j and run queries
+#graph_db = neo4j.GraphDatabaseService("http://grafocolaboracao:1CmvfXNcEzyT78FwUHVU@grafocolaboracao.sb02.stations.graphenedb.com:24789/db/data/")
 graph_db = neo4j.GraphDatabaseService()
 queryAuthors = "MATCH (a:Author) RETURN a"
 queryArticle = "MATCH (p:Article) RETURN p"

@@ -76,6 +76,32 @@ def data():
     """
     return dict(form=crud())
 
+
+@request.restful()
+def publication()
+    response.view = 'generic.json'
+    def GET(*args, **vars):
+        patterns=[
+            "/publications[publications]"
+        ]
+        try:
+            #graph_db = neo4j.GraphDatabaseService("http://grafocolaboracao:1CmvfXNcEzyT78FwUHVU@grafocolaboracao.sb02.stations.graphenedb.com:24789/db/data/")
+            graph_db = neo4j.GraphDatabaseService()
+            queryArticles = "MATCH (p:Article) RETURN p"
+            articles,metadata = cypher.execute(graph_db, queryArticles)
+            
+            authoring = list()
+            if articles.__len__() < 10:
+                raise Exception("Few articles")
+            for p in articles:
+                authoring.append({"nomePeriodico":p[0]["nomePeriodico"],
+                                    "size":1,
+                                    "author":p[4]["citacao"]}
+                )
+        except Exception,e:
+            return dict(authoring="ERROR: " + e.__str__())        
+        return dict(children=authoring)
+        
 @request.restful()
 def api():
     response.view = 'generic.json'
@@ -89,7 +115,7 @@ def api():
             ]
         
         try:
-            graph_db = neo4j.GraphDatabaseService()
+            graph_db = neo4j.GraphDatabaseService("http://grafocolaboracao:1CmvfXNcEzyT78FwUHVU@grafocolaboracao.sb02.stations.graphenedb.com:24789/db/data/")
             queryRelations = "MATCH (a:Author)<-[r:AUTHORING]->(p:Article) RETURN a,p"
             relations,metadata = cypher.execute(graph_db, queryRelations)
             

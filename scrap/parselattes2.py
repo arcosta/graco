@@ -40,36 +40,40 @@ def artigosPelaURL(soup):
     citationPrefix= re.compile("(.*(\.)?[\d]{4}(\n)?)",re.IGNORECASE | re.MULTILINE)
 
     for artigo in artigos:
-        fields = artigo['cvuri'].split("&")
-        resArt = dict()
-        #resArt["citacao"] = artigo.findParents()[0].text
-        #resArt["citacao"] = resArt["citacao"].replace("'", '?')
-        citationAsList = artigo.findParents()[0].text.replace("'", '?').split(" . ")
-        prefixToRemove = citationPrefix.match(citationAsList[0])
-        yearPublication = citationAsList[1].split(',')[-1].lstrip()
-        citationAsString = citationPrefix.split(citationAsList[0])[4].lstrip()
-        resArt["citacao"] = citationAsString
-        resArt["ano"] = yearPublication
-        for i in fields:
-            if i.find("issn") != -1:
-                issn_data=i.split('=')[1]
-                resArt["issn"]=issn_data
-                #print("issn: " + issn_data)
-                carregaJCR(issn_data, resArt)
-            if i.find("titulo") != -1:
-                titulo = i.split('=')[1]
-                resArt["titulo"]=titulo.replace("'", '´')
-                print("titulo: " + resArt["titulo"])
-            if i.find("nomePeriodico") != -1:
-                nomePeriodico=i.split('=')[1]
-                resArt["nomePeriodico"]=nomePeriodico
-                #print("Nome do periódico: " + nomePeriodico)
-            if i.find("doi") != -1:
-                doi=i.split('=')[1]
-                resArt["doi"]=doi
+        try:
+            fields = artigo['cvuri'].split("&")
+            resArt = dict()
+            #resArt["citacao"] = artigo.findParents()[0].text
+            #resArt["citacao"] = resArt["citacao"].replace("'", '?')
+            citationAsList = artigo.findParents()[0].text.replace("'", '?').split(" . ")
+            prefixToRemove = citationPrefix.match(citationAsList[0])
+            yearPublication = citationAsList[1].split(',')[-1].lstrip()
+            citationAsString = citationPrefix.split(citationAsList[0])[4].lstrip()
+            resArt["citacao"] = citationAsString
+            resArt["ano"] = yearPublication
+            for i in fields:
+                if i.find("issn") != -1:
+                    issn_data=i.split('=')[1]
+                    resArt["issn"]=issn_data
+                    #print("issn: " + issn_data)
+                    carregaJCR(issn_data, resArt)
+                if i.find("titulo") != -1:
+                    titulo = i.split('=')[1]
+                    resArt["titulo"]=titulo.replace("'", '´')
+                    print("titulo: " + resArt["titulo"])
+                if i.find("nomePeriodico") != -1:
+                    nomePeriodico=i.split('=')[1]
+                    resArt["nomePeriodico"]=nomePeriodico
+                    #print("Nome do periódico: " + nomePeriodico)
+                if i.find("doi") != -1:
+                    doi=i.split('=')[1]
+                    resArt["doi"]=doi
+                
+            print("")
+            resArtigos.append(resArt)
+        except IndexError as e:
+            print("Error inserting article %s" %citationAsString)
             
-        print("")
-        resArtigos.append(resArt)
     return resArtigos
 	
 	
@@ -84,9 +88,6 @@ def artigosPeloContexto(soup):
             print("Div com artigo encontrada: " + tag.text)
 
 def listaCitacoes(curriculo):
-    #url="http://buscatextual.cnpq.br/buscatextual/visualizacv.do?id=K4793179D5"
-    #url="http://buscatextual.cnpq.br/buscatextual/visualizacv.do?id=K4793137P2"
-
     soup = BeautifulSoup(urlopen(url_visualiza + curriculo).read())
     pads5 = soup.find_all(attrs={"class":"layout-cell-pad-5"})
 
