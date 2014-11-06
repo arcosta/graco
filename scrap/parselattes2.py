@@ -3,14 +3,26 @@ from urllib.request import urlopen
 from http.client import BadStatusLine
 import json,re
 
+#
+# Parse curriculum
+#
+
 protocolHost = "http://buscatextual.cnpq.br"
 url_visualiza = protocolHost + "/buscatextual/visualizacv.do?id="
+
+def titleToKey(title):
+    '''
+    @description Transform the title to remove latin and punction symbols and spaces.
+    @param title The title of the publication as informed in curriculum
+    '''
+    translationTable = str.maketrans("çáâãéêóôõúñ", "caaaeeoooun", ": '`{}[])(@?!_-/")
+    return title.lower().translate(translationTable)
 
 def carregaJCR(issn, resArt):
     '''
     @description Carrega as informações de JCR do artigo
     '''
-    baseurl = "http://buscatextual.cnpq.br/buscatextual/visualizacao.do"
+    baseurl = protocolHost + "/buscatextual/visualizacao.do"
     query="metodo=ajax&acao=jcr&issn=" + issn
     url=baseurl+"?"+query
 
@@ -23,7 +35,7 @@ def carregaJCR(issn, resArt):
             resArt.update(json_obj)
     except ValueError as err:
         # Esse é o caso dos artigos que não possuem JCR
-        print("Erro ao pegar jcr: ", err)
+        msg = "Erro ao pegar jcr: "+ err.__str__()
     except BadStatusLine as err:
         # Esse tratamento pega timeouts na urlopen	
         print("Erro de requisição no JCR: ", err)
@@ -43,11 +55,11 @@ def artigosPelaURL(soup):
         try:
             fields = artigo['cvuri'].split("&")
             resArt = dict()
-            #resArt["citacao"] = artigo.findParents()[0].text
-            #resArt["citacao"] = resArt["citacao"].replace("'", '?')
+            
             citationAsList = artigo.findParents()[0].text.replace("'", '?').split(" . ")
             prefixToRemove = citationPrefix.match(citationAsList[0])
-            yearPublication = citationAsList[1].split(',')[-1].lstrip()
+            #yearPublication = citationAsList[1].split(',')[-1].lstrip() 
+            yearPublication = re.search(r' (\d\d\d\d)[,\.]{1}', citationAsList[1]).group(1)
             citationAsString = citationPrefix.split(citationAsList[0])[4].lstrip()
             resArt["citacao"] = citationAsString
             resArt["ano"] = yearPublication
@@ -67,13 +79,11 @@ def artigosPelaURL(soup):
                     #print("Nome do periódico: " + nomePeriodico)
                 if i.find("doi") != -1:
                     doi=i.split('=')[1]
-                    resArt["doi"]=doi
-                
+                    resArt["doi"]=doi                
             print("")
             resArtigos.append(resArt)
         except IndexError as e:
-            print("Error inserting article %s" %citationAsString)
-            
+            print("Error inserting article %s" %citationAsString)            
     return resArtigos
 	
 	
@@ -81,13 +91,62 @@ def artigosPeloContexto(soup):
     '''
     @description Localiza uma div da classe pad-5 e verifica se ela contem um span com
     '''
-    tags_pad = soup.find_all(attrs={"class": "layout-cell-pad-5"})
-    for tag in tags_pad:
-        tag_artigo = tag.find_all(attrs={"class": "informacao-artigo"})
-        if tag_artigo.__len__() > 0:
-            print("Div com artigo encontrada: " + tag.text)
+    result = list()
+    citationPrefix= re.compile("(.*(\.)?[\d]{4}(\n)?)",re.IGNORECASE | re.MULTILINE)
+    
+    secaoArtigosCompletos = soup.find(attrs={"id": "artigos-completos"})
+    if secaoArtigosCompletos == None:
+        # there is no article published
+        return []
+    div_completeArticle = secaoArtigosCompletos.find_all(attrs={"class": "artigo-completo"})
+    print("%i artigos encontrados" %len(div_completeArticle))
+    for article in div_completeArticle:        
+        tag_article = article.find_all(attrs={"class": "layout-cell-pad-5"})[1]
+
+        articleEntry = tag_article.text
+        resArt = dict()
+            
+        articleEntryAsList = articleEntry.split(" . ")
+        if len(articleEntryAsList) < 2:
+            articleEntryAsList = articleEntry.split(" ; ")
+        prefixToRemove = citationPrefix.match(articleEntryAsList[0])
+        authors = articleEntryAsList[0].replace(prefixToRemove.group(),'')
+        
+        resArt['authors'] = authors.replace("'","`")
+        titleInfos = articleEntryAsList[1:]
+        #print(titleInfos)
+        title = titleInfos[0].split(". ")[0]
+        resArt['title'] = title.replace("'","`")
+        resArt['key'] = titleToKey(title)
+        
+        #print("Inserindo: %s" % articleEntry)
+        if len(titleInfos) > 1:
+            resArt['periodic'] = titleInfos[1].split(", ")[0]
+        else:
+            resArt['periodic'] = titleInfos[0].split(". ")[1]
+        resArt['year'] = re.search(r'(\d\d\d\d)', articleEntryAsList[0]).group(1)
+        
+        try:
+            citado = article.find(attrs={"class":"citacoes"})
+            cvuriFields = citado['cvuri'].split('&')
+            for i in cvuriFields:
+                if i.find("issn") != -1:
+                    issn_data=i.split('=')[1]
+                    resArt["issn"]=issn_data
+                    carregaJCR(issn_data, resArt)
+                if i.find("doi") != -1:
+                    doi=i.split('=')[1]
+                    resArt["doi"]=doi
+        except TypeError as e:
+            print(tag_article)
+
+        result.append(resArt)
+    return result
 
 def listaCitacoes(curriculo):
+    '''
+    @description List names used in citation 'and production' 
+    '''
     soup = BeautifulSoup(urlopen(url_visualiza + curriculo).read())
     pads5 = soup.find_all(attrs={"class":"layout-cell-pad-5"})
 
@@ -95,6 +154,7 @@ def listaCitacoes(curriculo):
     print("OS nomes usados nas citações são: " + citacoes)
 
 	# Essa função retorna uma lista de dicionarios
-    artigos = artigosPelaURL(soup)
+    #artigos = artigosPelaURL(soup)
+    artigos = artigosPeloContexto(soup)
     return (citacoes,artigos)
-    #artigosPeloContexto(soup)
+    

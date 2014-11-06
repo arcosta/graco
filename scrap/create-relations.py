@@ -56,14 +56,14 @@ for art in articles:
     if citation is not None:
         citationList = citation.split(" ; ")
         #print("Citado no artigo:", citationList)
-        articleList.append(Article(anode['titulo'],set(citationList)))
+        articleList.append(Article(anode['title'],set(citationList)))
 
 
 for p in professorList:
     for a in articleList:
         if p.citation.intersection(a.citation).__len__() > 0:
             print("Artigo %s - Autor: %s" %(a.subject, p.name))
-            cypher.execute(graph_db,"MATCH (a:Author {name:'%s'}),(p:Article {titulo:'%s'}) MERGE (a)<-[r:AUTHORING]->(p)" %(p.name, a.subject))
+            cypher.execute(graph_db,"MATCH (a:Author {name:'%s'}),(p:Article {title:'%s'}) MERGE (a)<-[r:AUTHORING]->(p)" %(p.name, a.subject))
     
 
 stop_time = time()
