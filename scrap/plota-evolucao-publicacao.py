@@ -69,7 +69,6 @@ def articleAuthorsByYear(g = None, year = None):
         ret[article['title']] = article['authors'].replace('\n','').lower()
     return ret
     
-
 def main():
     g = Graph()
     factor=list()
