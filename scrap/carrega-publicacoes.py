@@ -61,7 +61,7 @@ def carrega_artigos():
     no lattes atualizando os nomes usados nas citações carrega vértices com
     o rótulo Article
     '''
-    queryAuthors = "MATCH (a:Author) WHERE (a.keylattes is null) RETURN a.name"
+    queryAuthors = "MATCH (a:Author) WHERE (a.keylattes is null AND a.name =~ 'Fernanda.*') RETURN a.name"
     professors,metadata = cypher.execute(graph_db, queryAuthors)
 
     for i in professors:
