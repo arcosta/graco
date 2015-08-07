@@ -1,6 +1,7 @@
-from py2neo import neo4j,cypher
+from py2neo import Graph, Node
 import sys
 import time
+import json
 
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
@@ -13,8 +14,8 @@ print("Iniciando carga da base a partir de web")
 #TODO: acho que tem como obter um session fo graph_db
 #graph_db = neo4j.GraphDatabaseService("http://grafocolaboracao:1CmvfXNcEzyT78FwUHVU@grafocolaboracao.sb02.stations.graphenedb.com:24789/db/data/")
 #session = cypher.Session("http://grafocolaboracao:1CmvfXNcEzyT78FwUHVU@grafocolaboracao.sb02.stations.graphenedb.com:24789/db/data/")
-graph_db = neo4j.GraphDatabaseService()
-session = cypher.Session()
+graph_db = Graph()
+
 
 # Prepara a traducao de acentos para evitar problemas na busca
 charOrigem="áâãéêíóôõú"
@@ -27,9 +28,28 @@ def loadFromFile():
         line = sqlFile.readline()
         if not line:
             break
-        professors,metadata = cypher.execute(graph_db, line)
+        professors = graph_db.cypher.execute(graph_db, line)
     
-
+def loadFromJSON(jsonfile):
+    if not jsonfile:
+        return
+    print("Loading data from %s" %jsonfile)
+    jsondata=''
+    try:
+        f = open(jsonfile,'r')
+        jsondata = json.load(f)
+        f.close()
+    except IOError as e:
+        print("Error loading json file")
+        sys.exit(1)
+    
+    for entry in jsondata:
+        print("Loading author: %s" % entry['name'])
+        node = Node("Author", name=entry['name'], email=entry['email'], lattesurl=entry['lattesurl'])
+        graph_db.create(node)
+        
+    print("All list have been processed")
+        
 def carrega_professor():
     '''
     Pega a lista de nomes e os insere no grafo com o rótulo Author
@@ -102,5 +122,6 @@ def carrega_artigos():
        
 #loadFromFile()
 #carrega_professor()            
-carrega_artigos()
+#carrega_artigos()
+loadFromJSON("C:\\devel\\python\\scrap\\docentes.json")
 print("FIM")
