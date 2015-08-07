@@ -13,8 +13,8 @@
 import numpy as np
 import datetime as DT
 import matplotlib.pyplot as plt
-from matplotlib.lines import Line2D
 from py2neo import Graph, Node, Relationship
+
 
 
 consulta = "MATCH (a:Author)-[r:AUTHORING]-(p:Article) WHERE toInt(p.year) >= 2004 RETURN p.year AS year, count( DISTINCT p) AS Publications ORDER BY year"
@@ -69,7 +69,6 @@ def articleAuthorsByYear(g = None, year = None):
         ret[article['title']] = article['authors'].replace('\n','').lower()
     return ret
     
-
 def main():
     g = Graph()
     factor=list()
@@ -107,22 +106,17 @@ def main():
     fig = plt.figure()
     graph = fig.add_subplot(111)
     #plt.xticks(np.arange(min(anos), max(anos)+1, 10.0))
-    
-    [pub,fac,inter,exter]= graph.plot(years, publications, 'r--',
+    graph.plot(years, publications, 'r--',
                years, factor, 'g-',
                years, internal, 'k^',
                years, external, 'bo')
-
-    graph.legend((pub,fac,inter,exter),
-                 ('publicações','fator de coautoria','internas','externas'),
-                 loc=2)
 
     plt.title("Evolução das publicações")
     plt.xlabel("Anos")
     plt.ylabel("Publicações")
     graph.set_xticks(years)
     graph.set_xticklabels(years)
-    graph.axis([2003, 2015, -30, 140])
+    graph.axis([2003, 2015, -30, 110])
     graph.grid(True)
 
     plt.show()
