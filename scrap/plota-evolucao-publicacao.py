@@ -9,7 +9,7 @@
 # Licence:     <your licence>
 #-------------------------------------------------------------------------------
 
-#-*- coding: latin-1 -*-
+# -*- coding: latin-1 -*-
 import numpy as np
 import datetime as DT
 import matplotlib.pyplot as plt
@@ -30,10 +30,10 @@ def allCitationsKnown(g = None):
     return citations
 
 def authorSign(g = None):
-    '''
+    """
     Returns a dictionary with authors name as key and citations used
     by each author as value
-    '''
+    """
     if not g:
         return
     authors = g.find("Author")
@@ -43,9 +43,9 @@ def authorSign(g = None):
     return ret
 
 def matchAuthorBySign(sign = None):
-    '''
+    """
     Returns true whether the sign is used by some known author
-    '''
+    """
     if not sign:
         return
     citations = allCitationsKnown(Graph())
@@ -57,10 +57,10 @@ def matchAuthorBySign(sign = None):
         return False
     
 def articleAuthorsByYear(g = None, year = None):
-    '''
+    """
     Returns a list of articles published at that year as a dictionary with title
     as key and authors as value
-    '''
+    """
     if not g:
         return
     articles = g.find("Article", property_key='year', property_value=str(year))

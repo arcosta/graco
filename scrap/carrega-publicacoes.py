@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 from py2neo import Graph, Node
 import sys
 import time
@@ -11,11 +13,15 @@ import parselattes2
 
 print("Iniciando carga da base a partir de web")
 
-#TODO: acho que tem como obter um session fo graph_db
-#graph_db = neo4j.GraphDatabaseService("http://grafocolaboracao:1CmvfXNcEzyT78FwUHVU@grafocolaboracao.sb02.stations.graphenedb.com:24789/db/data/")
-#session = cypher.Session("http://grafocolaboracao:1CmvfXNcEzyT78FwUHVU@grafocolaboracao.sb02.stations.graphenedb.com:24789/db/data/")
-graph_db = Graph()
+# TODO: acho que tem como obter um session fo graph_db
+# graph_db = neo4j.GraphDatabaseService(
+# "http://grafocolaboracao:1CmvfXNcEzyT78FwUHVU@grafocolaboracao.sb02.stations.graphenedb.com:24789/db/data/"
+# )
+# session = cypher.Session(
+# "http://grafocolaboracao:1CmvfXNcEzyT78FwUHVU@grafocolaboracao.sb02.stations.graphenedb.com:24789/db/data/"
+# )
 
+graph_db = Graph()
 
 # Prepara a traducao de acentos para evitar problemas na busca
 charOrigem="áâãéêíóôõú"
@@ -23,6 +29,9 @@ charDestino="aaaeeiooou"
 tabelaTraducao= str.maketrans(charOrigem,charDestino)
 
 def loadFromFile():
+    """
+    Load the researchers from a file with insert query
+    """
     sqlFile=open("queryMergePRofessors.sql","r")
     while True:
         line = sqlFile.readline()
@@ -51,9 +60,9 @@ def loadFromJSON(jsonfile):
     print("All list have been processed")
         
 def carrega_professor():
-    '''
-    Pega a lista de nomes e os insere no grafo com o rótulo Author
-    '''
+    """
+    Inserts each element of a list with label Author
+    """
     soup = BeautifulSoup(urlopen("http://www.cic.unb.br/index.php?option=com_qcontacts&view=category&catid=0&Itemid=10").read())
 
     cont = 1
@@ -76,18 +85,23 @@ def carrega_professor():
     print("Author list loaded")
 
 def carrega_artigos():
-    '''
+    """
     Lista os vértices com rótulo Author pela propriedade name e faz a busca
     no lattes atualizando os nomes usados nas citações carrega vértices com
     o rótulo Article
-    '''
-    queryAuthors = "MATCH (a:Author) WHERE (a.keylattes is null AND a.name =~ 'Fernanda.*') RETURN a.name"
-    professors,metadata = cypher.execute(graph_db, queryAuthors)
+    """
+    queryAuthors = "MATCH (a:Author) WHERE (a.keylattes is null) RETURN a"
+    professors = graph_db.cypher.execute(queryAuthors)
+
+    print("Encontrados %i professores" % professors.__len__())
 
     for i in professors:
-        profName = str(i[0]).strip()        
+        profName = str(i[0]['name']).strip()
         print("Pesquisando professor: " + profName)     
         curriculums =  searchCV(profName)
+
+        if not curriculums:
+            continue
         
         if curriculums.__len__() > 1:
             print("Mais de um curriculo para o professor: " + profName)
@@ -100,28 +114,29 @@ def carrega_artigos():
             nomeCitacoes = nomeCitacoes.replace("'",'"')
             # Atualiza os nomes usados para citação
             try:
-                nodeAuthor, = cypher.execute(graph_db, 
+                nodeAuthor = graph_db.cypher.execute(
                                                      "MATCH (n:Author {name:'%s'}) SET n.citation = '%s',n.keylattes = '%s',n.timestamp = timestamp() RETURN n" %(profName, nomeCitacoes, curr))
             except Exception as e:
-                print("Erro ao inserir nomes usados em citacao para pesquisador " + profName,e)                        
+                print("Erro ao inserir nomes usados em citacao para pesquisador " + profName,e)
+                raise e
             for artigo in artigos:                
                 articleAsString = str()
                 for key in artigo.keys():
                     articleAsString += "p." + key.replace('-','_') + " = '" +artigo[key] + "', "                                   
                 try:                
-                    cypher.execute(graph_db,
+                    graph_db.cypher.execute(
                                    "MERGE (p:Article {title:'%s'}) ON CREATE SET %s p.lastUpdate = timestamp() RETURN p" %
                                    (artigo["title"], articleAsString)
                                    )
-                    cypher.execute(graph_db,
+                    graph_db.cypher.execute(
                                     "MATCH (a:Author {name:'%s'}),(p:Article {title:'%s'}) MERGE (a)<-[r:AUTHORING]->(p)" %
                                     (profName, artigo["title"]))               
                 except Exception as e:
                     print("Erro ao inserir artigo: ", e)
                     raise e
-       
+
+#loadFromJSON("docentes.json")       
 #loadFromFile()
 #carrega_professor()            
-#carrega_artigos()
-loadFromJSON("C:\\devel\\python\\scrap\\docentes.json")
+carrega_artigos()
 print("FIM")

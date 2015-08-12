@@ -64,7 +64,18 @@ def searchCV(name):
 
 
     #FIXME: Is this coding soup correct ?
-    resultPage = urlopen(request, data.encode('utf8')).read()
+    resultPage=''
+    count = 0
+    while count < 6:    
+        count +=1
+        try:
+            resultPage = urlopen(request, data.encode('utf8')).read()        
+        except Exception as e:
+            print("Erro submiting search form, still trying")
+
+    if resultPage == '':
+        return        
+            
     soup = BeautifulSoup(resultPage.decode('latin-1'))
 
 
