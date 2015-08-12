@@ -1,8 +1,9 @@
 #-*- coding: latin-1 -*-
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
+from urllib.error import URLError
 from http.client import BadStatusLine
-import json,re
+import json,re, time
 
 
 #
@@ -17,7 +18,7 @@ def titleToKey(title):
     @description Transform the title to remove latin and punction symbols and spaces.
     @param title The title of the publication as informed in curriculum
     '''
-    translationTable = str.maketrans("Ã§Ã¡Ã¢Ã£Ã©ÃªÃ³Ã´ÃµÃºÃ±", "caaaeeoooun", ": '`{}[])(@?!_-/")
+    translationTable = str.maketrans("çáâãéêóôõúñ", "caaaeeoooun", ": '`{}[])(@?!_-/")
     return title.lower().translate(translationTable)
 
 def carregaJCR(issn, resArt):
@@ -28,23 +29,30 @@ def carregaJCR(issn, resArt):
     query="metodo=ajax&acao=jcr&issn=" + issn
     url=baseurl+"?"+query
 
-    try:
-        pagina = urlopen(url).read().decode("utf-8")
-        json_obj = json.loads(pagina)
-        for i in json_obj.keys():
-            #print(i + " : " + json_obj[i])
-            resArt.update(json_obj)
-    except ValueError as err:
-        # Esse Ã© o caso dos artigos que nÃ£o possuem JCR
-        msg = "Erro ao pegar jcr: "+ err.__str__()
-    except BadStatusLine as err:
-        # Esse tratamento pega timeouts na urlopen
-        print("Erro de requisiÃ§Ã£o no JCR: ", err)
+    count = 0
+    maxtry=10
+    while count <= maxtry:
+        count +=1
+        try:
+            pagina = urlopen(url).read().decode("utf-8")
+            json_obj = json.loads(pagina)
+            for i in json_obj.keys():
+                #print(i + " : " + json_obj[i])
+                resArt.update(json_obj)
+            break
+        except ValueError as err:
+            # Esse é o caso dos artigos que não possuem JCR
+            msg = "Erro ao pegar jcr: "+ err.__str__()
+        except BadStatusLine as err:
+            # Esse tratamento pega timeouts na urlopen
+            print("Erro de requisição no JCR: ", err)
+        except URLError as err:
+            pass
 
 def artigosPelaURL(soup):
     '''
-    @description: Abordagem para pegar as informaÃ§Ãµes das publicaÃ§Ãµes pela url das citaÃ§Ãµes
-    para pegar as informaÃ§Ãµes de jcr devo tratar as informaÃ§Ãµes de <sup>
+    @description: Abordagem para pegar as informações das publicações pela url das citações
+    para pegar as informações de jcr devo tratar as informações de <sup>
 
     @param soup Objeto BeautifulSoup que armazena o DOM do curriculo
     '''
@@ -71,12 +79,12 @@ def artigosPelaURL(soup):
                     carregaJCR(issn_data, resArt)
                 if i.find("titulo") != -1:
                     titulo = i.split('=')[1]
-                    resArt["titulo"]=titulo.replace("'", 'Â´')
+                    resArt["titulo"]=titulo.replace("'", '´')
                     print("titulo: " + resArt["titulo"])
                 if i.find("nomePeriodico") != -1:
                     nomePeriodico=i.split('=')[1]
                     resArt["nomePeriodico"]=nomePeriodico
-                    #print("Nome do periÃ³dico: " + nomePeriodico)
+                    #print("Nome do periódico: " + nomePeriodico)
                 if i.find("doi") != -1:
                     doi=i.split('=')[1]
                     resArt["doi"]=doi
@@ -142,16 +150,40 @@ def artigosPeloContexto(soup):
     return result
 
 def listaCitacoes(curriculo):
-    '''
+    """
     @description List names used in citation 'and production'
-    '''
-    soup = BeautifulSoup(urlopen(url_visualiza + curriculo).read())
+    """
+    soup=''
+    MAXTRY = 10
+    tries=0
+    citacoes=''
+    
+    while tries <= MAXTRY:
+        try:
+            time.sleep(2)
+            print("Try: %i" % tries)
+            tries += 1
+            soup = BeautifulSoup(urlopen(url_visualiza + curriculo).read())
+            if soup.find_all(attrs={"class":"divCaptcha"}).__len__() > 0:
+                continue
+            else:
+                print("Acesso liberado !")
+                break
+            if tries == MAXTRY:
+                print("Numero de tentativas excedido")
+                return
+        except IOError as err:
+            print("Captcha error %s" % str(err))
+            
     pads5 = soup.find_all(attrs={"class":"layout-cell-pad-5"})
+    
+    if pads5.__len__() > 0:
+        citacoes = pads5[3].text
+        print("OS nomes usados nas citações são: " + citacoes)
+    else:
+        print("Nenhum nome de citação encontrado")
 
-    citacoes = pads5[3].text
-    print("OS nomes usados nas citaÃ§Ãµes sÃ£o: " + citacoes)
-
-	# This method returns a dictionary list
-    #artigos = artigosPelaURL(soup)
+    # This method returns a dictionary list
+    # artigos = artigosPelaURL(soup)
     artigos = artigosPeloContexto(soup)
     return (citacoes,artigos)

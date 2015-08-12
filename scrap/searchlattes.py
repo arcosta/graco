@@ -11,6 +11,16 @@ from urllib.parse import urlencode
 from bs4 import BeautifulSoup
 import re
 
+def getCVbyURL(lattesurl):
+    if not lattesurl:
+        return
+    retVal = list()
+    resp = urlopen(lattesurl)
+    retVal.append(resp.url.split('=')[-1])
+
+    return retVal
+
+
 def searchCV(name):
     '''
     Feed form to search curriculums based on researchers name and returns the id of curriculums
@@ -64,7 +74,18 @@ def searchCV(name):
 
 
     #FIXME: Is this coding soup correct ?
-    resultPage = urlopen(request, data.encode('utf8')).read()
+    resultPage=''
+    count = 0
+    while count < 6:    
+        count +=1
+        try:
+            resultPage = urlopen(request, data.encode('utf8')).read()        
+        except Exception as e:
+            print("Erro submiting search form, still trying")
+
+    if resultPage == '':
+        return        
+            
     soup = BeautifulSoup(resultPage.decode('latin-1'))
 
 
@@ -91,7 +112,6 @@ def searchCV(name):
             strLParPag = "&numeroPagina=" + str(pagina)
             urlResultados = protocolHost+"/buscatextual/busca.do?metodo=forwardPaginaResultados&registros="+str(regInicio)+";"+regPorPagina+queryPaginacao  + strLParPag + "&tipoOrdenacao=null&paginaOrigem=index.do&mostrarScore=false&mostrarBandeira=true&modoIndAdhoc=null"
             paginaResultados=BeautifulSoup(urlopen(urlResultados))
-
 
         # Search results are inside a div element whom attribute is class
         div_resultado = paginaResultados.find_all(attrs={"class":"resultado"})
