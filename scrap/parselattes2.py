@@ -30,7 +30,7 @@ def carregaJCR(issn, resArt):
     url=baseurl+"?"+query
 
     count = 0
-    maxtry=10
+    maxtry=12
     while count <= maxtry:
         count +=1
         try:
@@ -154,7 +154,7 @@ def listaCitacoes(curriculo):
     @description List names used in citation 'and production'
     """
     soup=''
-    MAXTRY = 10
+    MAXTRY = 12
     tries=0
     citacoes=''
     

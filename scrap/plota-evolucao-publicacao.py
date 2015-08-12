@@ -25,7 +25,8 @@ def allCitationsKnown(g = None):
 
     citations = ''
     for author in g.find('Author'):
-        citations += author['citation'].lower() + ';'
+        if author['citation']:
+            citations += author['citation'].lower() + ';'
         
     return citations
 
@@ -116,7 +117,7 @@ def main():
     plt.ylabel("Publicações")
     graph.set_xticks(years)
     graph.set_xticklabels(years)
-    graph.axis([2003, 2015, -30, 110])
+    graph.axis([2003, 2016, -30, 110])
     graph.grid(True)
 
     plt.show()
