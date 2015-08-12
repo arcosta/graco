@@ -84,7 +84,7 @@ def carrega_artigos():
     print("Encontrados %i professores" % professors.__len__())
 
     for i in professors:
-        profName = str(i[0]['name']).strip()
+        profName = str(i[0]['name'])
         print("Pesquisando professor: " + profName)     
         curriculums =  searchlattes.searchCV(profName)
 
