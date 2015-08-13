@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 from py2neo import Graph, Node, Relationship
 
 
-
+# TODO: Parametrizar a consulta com ano inicial e final
 consulta = "MATCH (a:Author)-[r:AUTHORING]-(p:Article) WHERE toInt(p.year) >= 2004 RETURN p.year AS year, count( DISTINCT p) AS Publications ORDER BY year"
 
 def allCitationsKnown(g = None):
@@ -107,17 +107,24 @@ def main():
     fig = plt.figure()
     graph = fig.add_subplot(111)
     #plt.xticks(np.arange(min(anos), max(anos)+1, 10.0))
-    graph.plot(years, publications, 'r--',
-               years, factor, 'g-',
-               years, internal, 'k^',
-               years, external, 'bo')
-
-    plt.title("Evolução das publicações")
+    plt.title("Evolução das publicações do PPGInf/UnB")
     plt.xlabel("Anos")
     plt.ylabel("Publicações")
+    #l = graph.plot(years, publications, 'r--',
+    #           years, factor, 'g-',
+    #           years, internal, 'k^',
+    #           years, external, 'bo')
+    pub, = graph.plot(years, publications, 'r--', label="Publicações")
+    fac, = graph.plot(years, factor, 'g-', label="Fator")
+    intp, = graph.plot(years, internal, 'k^', label="Internas")
+    extp, = graph.plot(years, external, 'bo', label="Externas")
+
+    plt.legend(handles=[pub, fac, intp, extp])
+
+
     graph.set_xticks(years)
     graph.set_xticklabels(years)
-    graph.axis([2003, 2016, -30, 110])
+    graph.axis([2003, 2016, -40, 140])
     graph.grid(True)
 
     plt.show()
