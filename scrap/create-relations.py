@@ -1,4 +1,4 @@
-from py2neo import neo4j,cypher,node
+from py2neo import Graph, Node
 from time import time
 
 #
@@ -30,18 +30,18 @@ start_time = time()
 
 #Connect to neo4j and run queries
 #graph_db = neo4j.GraphDatabaseService("http://grafocolaboracao:1CmvfXNcEzyT78FwUHVU@grafocolaboracao.sb02.stations.graphenedb.com:24789/db/data/")
-graph_db = neo4j.GraphDatabaseService()
+graph_db = Graph()
 queryAuthors = "MATCH (a:Author) RETURN a"
 queryArticle = "MATCH (p:Article) RETURN p"
-professors,metadata = cypher.execute(graph_db, queryAuthors)
-articles,metadata = cypher.execute(graph_db, queryArticle)
+professors = graph_db.cypher.execute(queryAuthors)
+articles = graph_db.cypher.execute(queryArticle)
 
 # Initialize lists
 professorList = list()
 articleList = list()
 
 for prof in professors:
-    pnode = node(prof[0])
+    pnode = Node(prof[0])
     citation = pnode['citation']
     citationList = list()
     if citation is not None:
@@ -50,8 +50,8 @@ for prof in professors:
         professorList.append(Professor(pnode['name'], set(citationList)))
 
 for art in articles:
-    anode = node(art[0])
-    citation = node(art[0])['citacao']
+    anode = Node(art[0])
+    citation = Node(art[0])['citacao']
     citationList = list()
     if citation is not None:
         citationList = citation.split(" ; ")
@@ -63,7 +63,7 @@ for p in professorList:
     for a in articleList:
         if p.citation.intersection(a.citation).__len__() > 0:
             print("Artigo %s - Autor: %s" %(a.subject, p.name))
-            cypher.execute(graph_db,"MATCH (a:Author {name:'%s'}),(p:Article {title:'%s'}) MERGE (a)<-[r:AUTHORING]->(p)" %(p.name, a.subject))
+            graph_db.cypher.execute("MATCH (a:Author {name:'%s'}),(p:Article {title:'%s'}) MERGE (a)<-[r:AUTHORING]->(p)" %(p.name, a.subject))
     
 
 stop_time = time()

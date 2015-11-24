@@ -30,6 +30,13 @@ def loadFromFile():
         if not line:
             break
         professors = graph_db.cypher.execute(graph_db, line)
+
+def loadName(name = ''):
+    if name == '':
+        return
+
+    professor = graph_db.cypher.execute("MERGE (a:Author {name:'%s'}) RETURN a" % name)
+    return professor
     
 def loadFromJSON(jsonfile):
     if not jsonfile:
@@ -78,8 +85,8 @@ def carrega_artigos():
     no lattes atualizando os nomes usados nas citações carrega vértices com
     o rótulo Article
     """
-    #queryAuthors = "MATCH (a:Author) WHERE (a.keylattes is null) RETURN a"
-    queryAuthors = "MATCH (a:Author) WHERE (a.citation =~ '') RETURN a"
+    queryAuthors = "MATCH (a:Author) WHERE (a.keylattes is null) RETURN a"
+    #queryAuthors = "MATCH (a:Author) WHERE (a.citation = '') RETURN a"
     professors = graph_db.cypher.execute(queryAuthors)
 
     print("Encontrados %i professores" % professors.__len__())
@@ -130,7 +137,7 @@ def carrega_artigos():
                     raise e
 
 #loadFromJSON("docentes.json")
-#loadFromFile()
+loadFromFile()
 #carrega_professor()
 carrega_artigos()
 print("FIM")

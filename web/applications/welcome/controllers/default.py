@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # this file is released under public domain and you can use without limitations
 
-from py2neo import neo4j,cypher
+from py2neo import Graph
 
 #########################################################################
 ## This is a sample controller
@@ -78,7 +78,7 @@ def data():
 
 
 @request.restful()
-def publication()
+def publication():
     response.view = 'generic.json'
     def GET(*args, **vars):
         patterns=[
@@ -86,17 +86,17 @@ def publication()
         ]
         try:
             #graph_db = neo4j.GraphDatabaseService("http://grafocolaboracao:1CmvfXNcEzyT78FwUHVU@grafocolaboracao.sb02.stations.graphenedb.com:24789/db/data/")
-            graph_db = neo4j.GraphDatabaseService()
+            graph_db = Graph()
             queryArticles = "MATCH (p:Article) RETURN p"
-            articles,metadata = cypher.execute(graph_db, queryArticles)
+            articles = graph_db.cypher.execute(queryArticles)
             
             authoring = list()
             if articles.__len__() < 10:
                 raise Exception("Few articles")
             for p in articles:
-                authoring.append({"nomePeriodico":p[0]["nomePeriodico"],
+                authoring.append({"nomePeriodico":p[0]["nome_periodico"],
                                     "size":1,
-                                    "author":p[4]["citacao"]}
+                                    "author":p[0]["authors"]}
                 )
         except Exception,e:
             return dict(authoring="ERROR: " + e.__str__())        
@@ -115,9 +115,10 @@ def api():
             ]
         
         try:
-            graph_db = neo4j.GraphDatabaseService("http://grafocolaboracao:1CmvfXNcEzyT78FwUHVU@grafocolaboracao.sb02.stations.graphenedb.com:24789/db/data/")
+            #graph_db = Graph("http://grafocolaboracao:1CmvfXNcEzyT78FwUHVU@grafocolaboracao.sb02.stations.graphenedb.com:24789/db/data/")
+            graph_db = Graph()
             queryRelations = "MATCH (a:Author)<-[r:AUTHORING]->(p:Article) RETURN a,p"
-            relations,metadata = cypher.execute(graph_db, queryRelations)
+            relations = graph_db.cypher.execute(queryRelations)
             
             links = list()
             if relations.__len__() < 10:

@@ -10,14 +10,13 @@
 #-------------------------------------------------------------------------------
 
 # -*- coding: latin-1 -*-
-import numpy as np
-import datetime as DT
 import matplotlib.pyplot as plt
 from py2neo import Graph, Node, Relationship
 
 
-# TODO: Parametrizar a consulta com ano inicial e final
-consulta = "MATCH (a:Author)-[r:AUTHORING]-(p:Article) WHERE toInt(p.year) >= 2004 RETURN p.year AS year, count( DISTINCT p) AS Publications ORDER BY year"
+fyear = 2004
+lyear = 2014
+consulta = "MATCH (a:Author)-[r:AUTHORING]-(p:Article) WHERE a.name IN %s AND toInt(p.year) >= %i AND toInt(p.year) <= %i RETURN p.year AS year, count( DISTINCT p) AS Publications ORDER BY year"
 
 def allCitationsKnown(g = None):
     if not g:
@@ -76,7 +75,11 @@ def main():
     internal=list()
     external=list()
 
-    resultSet = g.cypher.execute(consulta)
+    #"Jan Mendonca Correa",
+
+    pNames = ['Alba Cristina Magalhães Alves de Melo', 'Aletéia Patrícia Favacho', 'Anderson Clayton Nascimento', 'André Costa Drummond', 'Bruno Luiggi Macchiavello Espinoza', 'Camilo Chang Dorea','Carla Denise Castanho','Cláudia Nalon','Célia Ghedini Ralha','Diego de Freitas Aranha','Flávio de Barros Vidal','Genaína Nunes Rodrigues','George Luiz Medeiros Teodoro','Jacir Luiz Bordim','Jorge Carlos Lucero','Li Weigang','Maria Emília Machado Telles Walter','Maristela Terto de Holanda','Maurício Ayala Rincón','Mylène C. Q. Farias','Priscila América Solís Mendez Barreto','Ricardo Lopes de Queiroz','Ricardo Pezzuol Jacobi','Vander Ramos Alves','Rodrigo Bonifacio de Almeida']
+
+    resultSet = g.cypher.execute(consulta %(pNames, fyear, lyear))
     
     years=[int(x[0]) for x in resultSet]
     publications=[x[1] for x in resultSet]
@@ -88,16 +91,14 @@ def main():
         articles = articleAuthorsByYear(g, year)
         for pidx,paper in enumerate(articles.keys()):
             auth_list = articles[paper].split(';')
-            
 
-            #print("Artigo %i do ano %i tem %i autores" %(pidx, int(year), len(auth_list)))
             for cit in auth_list:
                 # FIXME: Always return false
                 if matchAuthorBySign(cit):
                     inte += 1
                 else:
                     exte += 1
-            #print('Ano %s: artigo %i - %i internos / %i externos: %s' % (year, pidx, internal,external, articles[paper]))    
+
         fac = (inte-exte)/len(articles)
         print("Ano %i : %i internos / %i externos %i artigos -> %f" %(year, inte, exte,len(articles), fac))
         internal.append(inte)
@@ -106,25 +107,21 @@ def main():
                                 
     fig = plt.figure()
     graph = fig.add_subplot(111)
-    #plt.xticks(np.arange(min(anos), max(anos)+1, 10.0))
     plt.title("Evolução das publicações do PPGInf/UnB")
     plt.xlabel("Anos")
     plt.ylabel("Publicações")
-    #l = graph.plot(years, publications, 'r--',
-    #           years, factor, 'g-',
-    #           years, internal, 'k^',
-    #           years, external, 'bo')
+
     pub, = graph.plot(years, publications, 'r--', label="Publicações")
-    fac, = graph.plot(years, factor, 'g-', label="Fator")
-    intp, = graph.plot(years, internal, 'k^', label="Internas")
-    extp, = graph.plot(years, external, 'bo', label="Externas")
+    #fac, = graph.plot(years, factor, 'g-', label="Fator")
+    intp, = graph.plot(years, internal, 'k^', label="Autorias internas")
+    extp, = graph.plot(years, external, 'bo', label="Autorias externas")
 
-    plt.legend(handles=[pub, fac, intp, extp])
-
+    #plt.legend(handles=[pub, fac, intp, extp])
+    plt.legend(handles=[pub, intp, extp])
 
     graph.set_xticks(years)
     graph.set_xticklabels(years)
-    graph.axis([2003, 2016, -40, 140])
+    graph.axis([fyear - 1, lyear + 1, -40, 140])
     graph.grid(True)
 
     plt.show()
