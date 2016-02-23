@@ -15,9 +15,13 @@ def getCVbyURL(lattesurl):
     if not lattesurl:
         return
     retVal = list()
-    resp = urlopen(lattesurl)
-    retVal.append(resp.url.split('=')[-1])
-
+    try:
+        resp = urlopen(lattesurl)
+        retVal.append(resp.url.split('=')[-1])
+    except ValueError as e:
+        print("Error %s for %s " % (str(e), lattesurl))
+        return
+     
     return retVal
 
 

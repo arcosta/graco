@@ -36,6 +36,6 @@ with open("docentes-ufrn.json",'w') as f:
     for p in professors:
         if p['name'] == 'Nome':
             continue
-        f.write('{"name":"%s","lattes":"%s"},' % (p['name'],p['lattes']))
+        f.write('{"name":"%s","lattesurl":"%s"},' % (p['name'],p['lattes']))
     f.write('null]')
         

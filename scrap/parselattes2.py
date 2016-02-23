@@ -12,6 +12,7 @@ import json,re, time
 
 protocolHost = "http://buscatextual.cnpq.br"
 url_visualiza = protocolHost + "/buscatextual/visualizacv.do?id="
+MAXTRY = 50
 
 def titleToKey(title):
     '''
@@ -30,8 +31,8 @@ def carregaJCR(issn, resArt):
     url=baseurl+"?"+query
 
     count = 0
-    maxtry=12
-    while count <= maxtry:
+    #maxtry=22
+    while count <= MAXTRY:
         count +=1
         try:
             pagina = urlopen(url).read().decode("utf-8")
@@ -154,14 +155,14 @@ def listaCitacoes(curriculo):
     @description List names used in citation 'and production'
     """
     soup=''
-    MAXTRY = 12
+    
     tries=0
     citacoes=''
     
     while tries <= MAXTRY:
         try:
-            time.sleep(2)
-            print("Try: %i" % tries)
+            time.sleep(1)
+            #print("Try: %i" % tries)
             tries += 1
             soup = BeautifulSoup(urlopen(url_visualiza + curriculo).read())
             if soup.find_all(attrs={"class":"divCaptcha"}).__len__() > 0:

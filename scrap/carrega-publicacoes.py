@@ -103,7 +103,9 @@ def carrega_artigos():
             else:
                 continue
 
-        if len(curriculums) > 1:
+        if curriculums is None:
+            continue
+        elif len(curriculums) > 1:
             print("Mais de um curriculo para o professor: " + profName)
             # FIXME: Dont insert the wrong curriculum. Need to call disambiguation
             continue
@@ -120,24 +122,24 @@ def carrega_artigos():
             except Exception as e:
                 print("Erro ao inserir nomes usados em citacao para pesquisador " + profName,e)
                 raise e
-            for artigo in artigos:                
-                articleAsString = str()
-                for key in artigo.keys():
-                    articleAsString += "p." + key.replace('-','_') + " = '" +artigo[key] + "', "                                   
-                try:                
-                    graph_db.cypher.execute(
-                                   "MERGE (p:Article {title:'%s'}) ON CREATE SET %s p.lastUpdate = timestamp() RETURN p" %
-                                   (artigo["title"], articleAsString)
-                                   )
-                    graph_db.cypher.execute(
-                                    "MATCH (a:Author {name:'%s'}),(p:Article {title:'%s'}) MERGE (a)<-[r:AUTHORING]->(p)" %
-                                    (profName, artigo["title"]))               
-                except Exception as e:
-                    print("Erro ao inserir artigo: ", e)
-                    raise e
+            #for artigo in artigos:                
+            #    articleAsString = str()
+            #    for key in artigo.keys():
+            #        articleAsString += "p." + key.replace('-','_') + " = '" +artigo[key] + "', "                                   
+            #    try:                
+            #        graph_db.cypher.execute(
+            #                       "MERGE (p:Article {title:'%s'}) ON CREATE SET %s p.lastUpdate = timestamp() RETURN p" %
+            #                       (artigo["title"], articleAsString)
+            #                       )
+            #        graph_db.cypher.execute(
+            #                        "MATCH (a:Author {name:'%s'}),(p:Article {title:'%s'}) MERGE (a)<-[r:AUTHORING]->(p)" %
+            #                        (profName, artigo["title"]))               
+            #    except Exception as e:
+            #        print("Erro ao inserir artigo: ", e)
+            #        raise e
 
 #loadFromJSON("docentes.json")
-loadFromFile()
+#loadFromFile()
 #carrega_professor()
 carrega_artigos()
 print("FIM")
